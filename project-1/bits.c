@@ -1,7 +1,7 @@
 /* 
  * CS:APP Data Lab 
  * 
- * <Please put your name and userid here>
+ * <Hoang Phan - 7209143143>
  * 
  * bits.c - Source file with your solutions to the Lab.
  *          This is the file you will hand in to your instructor.
@@ -171,7 +171,11 @@ NOTES:
  *   Rating: 1
  */
 int tmin(void) {
-  return 2;
+	//min number in two's complement system is 10000...00, but this
+	//number cannot be explicitly defined, so I left shifted 1 31
+	//bits 
+	int result = (1 << 31);
+	return result;
 }
 /* 
  * bitNor - ~(x|y) using only ~ and & 
@@ -181,7 +185,10 @@ int tmin(void) {
  *   Rating: 1
  */
 int bitNor(int x, int y) {
-  return 2;
+	//!(x || y) = (!x) && (!y)
+	//this transfers to bit logic 
+	int result = ~x & ~y;
+  	return result;
 }
 /* 
  * byteSwap - swaps the nth byte and the mth byte
@@ -193,7 +200,28 @@ int bitNor(int x, int y) {
  *  Rating: 2
  */
 int byteSwap(int x, int n, int m) {
-    return 2;
+	//Create 2 masks which has FF as nth or mth bytes, else 0
+	//Create third mask which has FF on non-n and non-m bytes
+	//Apply first two masks to x to get n and m bytes, swap them
+	//Apply third mask to x to get non-n and non-m bytes
+	//Or the three results to get byteswapped result
+	int bitN = n << 3;
+	int bitM = m << 3;
+	int maskN = (0xFF << bitN);
+	int maskM = (0xFF << bitM);
+	int maskX = ~(maskN | maskM);
+	
+	int unchanged = x & maskX;
+	int onlyN = x & maskN;
+	int onlyM = x & maskM; 
+	
+	onlyN = (onlyN >> bitN) & 0xFF;
+	onlyN = onlyN << bitM;
+	
+	onlyM = (onlyM >> bitM) & 0xFF;
+	onlyM = onlyM << bitN;
+
+	return unchanged | onlyN | onlyM;
 }
 /* 
  * isEqual - return 1 if x == y, and 0 otherwise 
@@ -203,7 +231,9 @@ int byteSwap(int x, int n, int m) {
  *   Rating: 2
  */
 int isEqual(int x, int y) {
-  return 2;
+	// x==y if and only if x^y==0
+	// So !(x^y) returns 1 if x==y
+  return !(x^y);
 }
 /* 
  * addOK - Determine if can compute x+y without overflow
@@ -214,7 +244,16 @@ int isEqual(int x, int y) {
  *   Rating: 3
  */
 int addOK(int x, int y) {
-  return 2;
+	//Overflow happens when the sum is negative when x and y are
+	//positive, or the sum is positive when x and y are negative.
+	//Get the first bits of x, y, and the sum to check if they
+	//are negative or positive. Use the above condition to check
+	//for overflow.
+  int firstBitX = (x >> 31);
+  int firstBitY = (y >> 31);
+  int firstBitSum = ((x+y) >> 31);
+
+  return !((firstBitX ^ firstBitSum) & (firstBitY ^ firstBitSum));
 }
 /* 
  * bitMask - Generate a mask consisting of all 1's 
@@ -227,7 +266,16 @@ int addOK(int x, int y) {
  *   Rating: 3
  */
 int bitMask(int highbit, int lowbit) {
-  return 2;
+	//Start with 1111...11
+	//Leftshift this number by lowbit to get the zeroes at the end
+	//Apply on the resulting number a mask of 1s up to the high bit.
+	//Example: highbit = 5, mask = 00...0111111
+
+	int ones = 0xFF<<24 | 0xFF<<16 | 0xFF<<8 | 0xFF;
+	int highmask = (2 << highbit) + (~1 + 1);
+	ones = ones << lowbit;
+	ones = ones & highmask;
+  return ones;
 }
 /* 
  * isNonNegative - return 1 if x >= 0, return 0 otherwise 
@@ -237,5 +285,6 @@ int bitMask(int highbit, int lowbit) {
  *   Rating: 3
  */
 int isNonNegative(int x) {
-  return 2;
+	//Get the first bit. If it's 1, return 0, else return 1.
+  return !(x >> 31 & 1);
 }
