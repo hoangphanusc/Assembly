@@ -173,7 +173,13 @@ NOTES:
  *   Rating: 4
  */
 int absVal(int x) {
-  return 2;
+  //Create a mask with last bit of x (all 1s if x is negative, else all 0s)
+  //xor x with mask to get ~x when x is negative, x when x is positive
+  //Add negation of mask to result to +1 when mask is all 1, +0 when mask is
+  //all 0s.
+  int mask = x>>31;
+  x = (x ^ mask) + ((~mask) + 1);
+  return x;
 }
 /*
  * ezThreeFourths - multiplies by 3/4 rounding toward 0,
@@ -187,7 +193,17 @@ int absVal(int x) {
  *   Rating: 3
  */
 int ezThreeFourths(int x) {
-  return 2;
+  //First multiply x by 3 by calc-ing 2x + x
+  //if 3x is positive then 3x<<2 will be automatically rounded down.
+  //We need to add 1 to x/4 if the 1st and 2nd bit of 3x are not both 0,
+  //and the last bit is 1 (meaning x is negative; 3x/4 needs to be round up)
+  //last & (first | second) evals to 1 if true. Add this to 3x/4.
+  int threex = (x << 1) + x;
+  int firstbit = threex & 0x1;
+  int secondbit = (threex & 0x2) >> 1;
+  int lastbit = threex>>31;
+  x = (threex >> 2) + ((firstbit | secondbit) & lastbit);
+  return x;
 }
 /* 
  * float_abs - Return bit-level equivalent of absolute value of f for
@@ -201,7 +217,13 @@ int ezThreeFourths(int x) {
  *   Rating: 2
  */
 unsigned float_abs(unsigned uf) {
-  return 2;
+  //To check for NaN, check for the first 31 bits of uf > 0x7F800000 (discussion)
+  //To get absolute value, change the last bit to 0 (so uf & first 31 bits)
+  int first31 = uf & 0x7fffffff;
+  if (first31 > 0x7F800000){
+    return uf;
+  }
+  return uf & first31;
 }
 /* 
  * float_half - Return bit-level equivalent of expression 0.5*f for
@@ -215,7 +237,47 @@ unsigned float_abs(unsigned uf) {
  *   Rating: 4
  */
 unsigned float_half(unsigned uf) {
-  return 2;
+  //Check uf for NaN or infinite by first31bits >= 0x07800000
+  //if NaN or infinite, return argument
+  //Check uf for denormalized value by <= 0x007fffff
+  
+  //Denormal: if uf is 0, return uf 
+  //Else right shift fraction by 1. take care of rounding by +1
+  //if the lost bit is 1 and the new first bit is 1
+
+  //Normal: minus 1 from exponent part
+  //If the resulting number is still normal, return uf
+  //Else right shift fraction by 1 and make the last fraction bit 1
+  //to simulate moving the binary point in front of the significant 1.
+  //Take care of rounding the fraction part again then return.
+
+
+  int lastbit = uf & 0x80000000;
+  int first31 = uf & 0x7fffffff;
+  int first23 = uf & 0x007fffff;
+  int last9;
+  if (first31 >= 0x7f800000){ //Check NaN or infinite
+    return uf;
+  }
+  if (first31 <= 0x007fffff){ //Check denormalized
+    if (!first23) {
+      return uf;
+    }
+    if (first23 & 2){
+      return (lastbit | ((first23/2) + (first23&1)) );
+    }
+    return (lastbit | (first23/2));
+  }
+  uf = uf - 0x00800000;
+  first31 = uf & 0x7fffffff;
+  last9 = uf & 0xFF800000;
+  if (first31 <= 0x007fffff) {
+    if (first23 & 2){
+      return (last9 |  (first23/2 + (first23&1)) | 0x00400000);
+    }
+    return (last9 | ((first23/2) | 0x00400000));
+  }
+  return uf;
 }
 /*
  * satMul2 - multiplies by 2, saturating to Tmin or Tmax if overflow
@@ -227,5 +289,26 @@ unsigned float_half(unsigned uf) {
  *   Rating: 3
  */
 int satMul2(int x) {
-  return 2;
+  //sum = 2x
+  //if last bits of x and sum are the same, there wasn't an overflow
+  //  so check with lastbitx ^ lastbitsum
+  //  make a mask out of this => all 1s if diff signs, 0s if same.
+  //else
+  //  if last bit of x is 0 (+) and of sum is 1 (-), return Tmax
+  //  else return Tmin.
+  //  but Tmax + 1 = Tmin. So just return (Tmax + lastbitx)
+  //To decide which to return based on the sign difference,
+  //(sum & ~mask) + (tmax & mask) evals to: sum if same sign,
+  //tmax if diff sign. Add lastbitx if the signs were different.
+
+
+  int tmax = 0x7F << 24 | 0xFF << 16 | 0xFF << 8 | 0xFF;
+
+  int sum = x + x;
+  int lastbitsum = sum >> 31 & 1;
+  int lastbitx = x >> 31 & 1;
+  int diffsign = lastbitsum ^ lastbitx;
+  int mask = (diffsign << 31) >> 31;
+
+  return (sum & ~mask) + (tmax & mask) + (diffsign & lastbitx);
 }
