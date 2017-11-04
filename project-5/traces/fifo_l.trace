@@ -2226,7 +2226,6 @@
  S ffeffe6e8,8
  S ffeffe6e0,8
  S ffeffe6d8,8
---17431-- Read--17431--   Cons--17431--   .. CRC m--17431--    object doesn't have a symbol table
  L ffeffe6d8,8
  L ffeffe6e0,8
  L ffeffe6e8,8
@@ -3767,7 +3766,6 @@
  S ffefff558,8
  S ffefff550,8
  S ffefff548,8
---17431-- Read--17431--   Cons--17431--   .. CRC m--17431--   Cons--17431--   .. CRC  L ffefff548,8
  L ffefff550,8
  L ffefff558,8
  L ffefff560,8
