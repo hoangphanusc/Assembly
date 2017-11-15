@@ -18,10 +18,7 @@
 #include "mm.h"
 #include "memlib.h"
 
-/*********************************************************
- * NOTE TO STUDENTS: Before you do anything else, please
- * provide your team information in the following struct.
- ********************************************************/
+
 
 
 /* single word (4) or double word (8) alignment */
